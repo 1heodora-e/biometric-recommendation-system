@@ -8,17 +8,17 @@ import os
 
 
 # Load pre-trained models
-image_model = joblib.load('image/image_model.pkl')
-image_le = joblib.load('image/image_label_encoder.pkl')
+image_model = joblib.load("Image_processing/image_model.pkl")
+image_le = joblib.load("Image_processing/image_label_encoder.pkl")
 
-audio_model = joblib.load('voice/audio_model.pkl')
-audio_le = joblib.load('voice/audio_label_encoder.pkl')
+audio_model = joblib.load("Audio_processing/audio_model.pkl")
+audio_le = joblib.load("Audio_processing/audio_label_encoder.pkl")
 
-product_model = joblib.load('predictor/product_recommendation_model.pkl')
+product_model = joblib.load("Prediction_functionality/product_recommendation_model.pkl")
 
 
 # Load merged customer data
-merged_file = 'predictor/merged_customer_data.csv'
+merged_file = "Prediction_functionality/merged_customer_data.csv"
 if not os.path.exists(merged_file):
     st.error(f"Error: {merged_file} not found. Please make sure the file exists.")
     st.stop()
@@ -28,24 +28,24 @@ merged_data = pd.read_csv(merged_file)
 
 # Define feature columns
 feature_columns = [
-    'engagement_score', 
-    'purchase_interest_score', 
-    'review_sentiment_encoded',
-    'avg_purchase_amount', 
-    'total_spent', 
-    'purchase_count', 
-    'avg_rating'
+    "engagement_score",
+    "purchase_interest_score",
+    "review_sentiment_encoded",
+    "avg_purchase_amount",
+    "total_spent",
+    "purchase_count",
+    "avg_rating",
 ]
 
 for col in feature_columns:
     if col not in merged_data.columns:
         merged_data[col] = 0
 
-product_categories = ['clothes', 'sports', 'electronic', 'books', 'groceries']
-
+product_categories = ["clothes", "sports", "electronic", "books", "groceries"]
 
 
 # Helper Functions
+
 
 def predict_image_class(image_file, threshold=0.6):
     try:
@@ -57,6 +57,7 @@ def predict_image_class(image_file, threshold=0.6):
         return label if max_prob >= threshold else "unauthorized"
     except Exception as e:
         return f"Error: {e}"
+
 
 def predict_voice(audio_file, threshold=0.55):
     try:
@@ -70,6 +71,7 @@ def predict_voice(audio_file, threshold=0.55):
     except Exception as e:
         return f"Error: {e}"
 
+
 def recommend_all_customers():
     """Runs the product model AFTER both verifications succeed."""
     results = []
@@ -80,28 +82,33 @@ def recommend_all_customers():
         try:
             probs = product_model.predict_proba(features)[0]
         except:
-            probs = np.full(len(product_categories), 1/len(product_categories))
+            probs = np.full(len(product_categories), 1 / len(product_categories))
 
         top_idx = np.argsort(probs)[::-1][:3]
 
         for i in top_idx:
-            results.append({
-                "customer_id": row["customer_id"],
-                "Category": product_categories[i],
-                "Probability": f"{probs[i]:.2%}"
-            })
+            results.append(
+                {
+                    "customer_id": row["customer_id"],
+                    "Category": product_categories[i],
+                    "Probability": f"{probs[i]:.2%}",
+                }
+            )
     return pd.DataFrame(results)
-
 
 
 # Streamlit UI (NEW FLOW)
 
 
 st.title("🔐 Face → Parameter → Voice Verification → Recommendation")
-st.write("Authenticate with your **face first**, enter ANY parameter, then verify with **voice** to unlock recommendations.")
+st.write(
+    "Authenticate with your **face first**, enter ANY parameter, then verify with **voice** to unlock recommendations."
+)
 
 # STEP 1 — FACE VERIFICATION
-face_file = st.file_uploader("Step 1: Upload your face image", type=["jpg", "png", "jpeg"])
+face_file = st.file_uploader(
+    "Step 1: Upload your face image", type=["jpg", "png", "jpeg"]
+)
 
 if face_file:
     st.info("Verifying face...")
@@ -121,7 +128,9 @@ if face_file:
         st.info(f"Parameter received: **{user_param}**")
 
         # STEP 3 — VOICE VERIFICATION
-        audio_file = st.file_uploader("Step 3: Upload your voice sample", type=["wav", "mp3", "flac"])
+        audio_file = st.file_uploader(
+            "Step 3: Upload your voice sample", type=["wav", "mp3", "flac"]
+        )
 
         if audio_file:
             st.info("Verifying voice...")
